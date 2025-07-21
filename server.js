@@ -1,26 +1,34 @@
 const WebSocket = require('ws');
-const PORT = process.env.PORT || 3000;
+const http = require('http');
 
-const server = new WebSocket.Server({ port: PORT });
-
-let players = [];
-
-server.on('connection', (socket) => {
-  console.log('Гравець підключився');
-  players.push(socket);
-
-  socket.on('message', (message) => {
-    for (let player of players) {
-      if (player !== socket && player.readyState === WebSocket.OPEN) {
-        player.send(message);
-      }
-    }
-  });
-
-  socket.on('close', () => {
-    players = players.filter(p => p !== socket);
-    console.log('Гравець відключився');
-  });
+// Створюємо HTTP-сервер (обов’язково для Render)
+const server = http.createServer((req, res) => {
+  res.writeHead(200);
+  res.end('🌐 Сервер WebSocket працює!');
 });
 
-console.log(`Сервер працює на порті ${PORT}`);
+// Створюємо WebSocket-сервер
+const wss = new WebSocket.Server({ server });
+
+wss.on('connection', (ws) => {
+  console.log('🟢 Нове підключення WebSocket');
+
+  ws.on('message', (message) => {
+    console.log('📩 Отримано повідомлення:', message.toString());
+
+    // Відправляємо назад відповідь
+    ws.send(`🔁 Сервер отримав: ${message}`);
+  });
+
+  ws.on('close', () => {
+    console.log('🔴 Клієнт відключився');
+  });
+
+  ws.send('👋 Вітаємо на сервері WebSocket!');
+});
+
+// Запускаємо сервер
+const PORT = process.env.PORT || 10000;
+server.listen(PORT, () => {
+  console.log(`🚀 Сервер запущено на порту ${PORT}`);
+});
